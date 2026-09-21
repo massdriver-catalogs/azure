@@ -1,0 +1,51 @@
+name: key-vault
+version: 0.0.0
+label: Key Vault
+icon: https://raw.githubusercontent.com/massdriver-catalogs/azure/main/bundles/azure-key-vault/icon.svg
+
+ui:
+  connectionOrientation: link
+  environmentDefaultGroup: security
+  instructions:
+    - label: Azure Key Vault
+      path: ./instructions/Azure Key Vault.md
+
+schema:
+  title: Key Vault
+  description: A store for keys, secrets, and certificates. Another bundle encrypts its data with a key from this store.
+  type: object
+  additionalProperties: false
+  required:
+    - id
+    - name
+    - uri
+  properties:
+    id:
+      title: ID
+      description: The full identifier of the vault in the cloud provider.
+      type: string
+      minLength: 1
+    name:
+      title: Name
+      description: The name of the vault.
+      type: string
+      minLength: 1
+    uri:
+      title: URI
+      description: The address of the vault.
+      type: string
+      pattern: ^https://
+      message:
+        pattern: "Must start with https://."
+    region:
+      title: Region
+      description: The cloud region that holds the vault.
+      type: string
+    tenant_id:
+      title: Tenant ID
+      description: The directory that holds the identities with access to the vault.
+      type: string
+    purge_protection:
+      title: Purge Protection
+      description: True when nobody can remove a deleted key before the retention period ends. A customer managed key needs this.
+      type: boolean

@@ -1,0 +1,11 @@
+# Each skip carries the reason that the platform team accepted.
+skip-check:
+  # Purge protection is a parameter of this bundle, and Azure cannot turn it
+  # off again. A development vault leaves it off so the name frees up, and a
+  # production vault turns it on. These two checks read the same field.
+  - CKV_AZURE_42
+  - CKV_AZURE_110
+  # A private endpoint needs the azure-private-dns-zone bundle and an endpoint
+  # resource. The network rules already refuse every source outside the
+  # connected network.
+  - CKV2_AZURE_32

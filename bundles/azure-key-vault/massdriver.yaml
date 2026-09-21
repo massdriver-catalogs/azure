@@ -1,0 +1,72 @@
+name: azure-key-vault
+description: An Azure Key Vault for keys, secrets, and certificates. It accepts traffic from the connected network only, and it uses Azure roles instead of access policies.
+source_url: https://github.com/massdriver-catalogs/azure/tree/main/bundles/azure-key-vault
+version: 0.0.0
+
+params:
+  examples:
+    - __name: Development
+      sku: standard
+      purge_protection: false
+      soft_delete_days: 7
+    - __name: Production
+      sku: premium
+      purge_protection: true
+      soft_delete_days: 90
+  required:
+    - sku
+    - soft_delete_days
+  properties:
+    sku:
+      type: string
+      title: Service Level
+      description: The level of the vault. The premium level stores a key in a hardware module.
+      default: standard
+      oneOf:
+        - const: standard
+          title: Standard — a software key
+        - const: premium
+          title: Premium — a hardware module key (FIPS 140-2 Level 2)
+    purge_protection:
+      type: boolean
+      title: Purge Protection
+      description: Nobody can remove a deleted key before the retention period ends. A customer managed key needs this, and Azure cannot turn it off again.
+      default: false
+      $md.immutable: true
+    soft_delete_days:
+      type: integer
+      title: Soft Delete Retention (days)
+      description: The number of days that Azure keeps a deleted key. Azure cannot shorten this period later.
+      default: 7
+      minimum: 7
+      maximum: 90
+      $md.immutable: true
+
+dependencies:
+  azure_service_principal:
+    resource_type: azure-service-principal@0.0.0
+    required: true
+  network:
+    resource_type: virtual-network@0.0.0
+    required: true
+
+resources:
+  vault:
+    resource_type: key-vault@0.0.0
+    required: true
+
+steps:
+  - path: src
+    provisioner: opentofu:1.10
+
+ui:
+  ui:order:
+    - sku
+    - purge_protection
+    - soft_delete_days
+    - "*"
+  purge_protection:
+    ui:help: "Warning: Azure cannot turn this off. A vault with purge protection stays until the retention period ends, and its name stays reserved."
+  soft_delete_days:
+    ui:widget: updown
+    ui:help: "Azure cannot shorten this period after the first deployment. 7 days suits development, and 90 days suits production."

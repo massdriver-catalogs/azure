@@ -1,0 +1,18 @@
+# Each skip carries the reason that the platform team accepted.
+skip-check:
+  # A customer managed key needs a key from the azure-key-vault bundle. This
+  # bundle takes no key connection yet. Azure encrypts with its own key, and
+  # infrastructure encryption adds a second layer.
+  - CKV2_AZURE_1
+  # The bundle writes this record when a log workspace is connected. Checkov
+  # reads the code without the connection, so it cannot see the setting.
+  - CKV2_AZURE_21
+  # A private endpoint needs the azure-private-dns-zone bundle and an endpoint
+  # resource. This bundle creates neither yet, and the network rules already
+  # refuse every source outside the network.
+  - CKV2_AZURE_33
+  # The account holds no queue. Only the blob service is in use.
+  - CKV_AZURE_33
+  # The network rules deny by default, and no nested item can be public. The
+  # account answers the connected network only.
+  - CKV_AZURE_59

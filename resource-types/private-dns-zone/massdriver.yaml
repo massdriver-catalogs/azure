@@ -1,0 +1,41 @@
+name: private-dns-zone
+version: 0.0.0
+label: Private DNS Zone
+icon: https://raw.githubusercontent.com/massdriver-catalogs/azure/main/bundles/azure-private-dns-zone/icon.svg
+
+ui:
+  connectionOrientation: link
+  environmentDefaultGroup: networks
+  instructions:
+    - label: Azure Private DNS Zone
+      path: ./instructions/Azure Private DNS Zone.md
+
+schema:
+  title: Private DNS Zone
+  description: A name space that resolves inside a network. A private endpoint registers its name here.
+  type: object
+  additionalProperties: false
+  required:
+    - id
+    - name
+  properties:
+    id:
+      title: ID
+      description: The full identifier of the zone in the cloud provider.
+      type: string
+      minLength: 1
+    name:
+      title: Name
+      description: The name of the zone, such as privatelink.blob.core.windows.net.
+      type: string
+      minLength: 1
+    resource_group:
+      title: Resource Group
+      description: The resource group that holds the zone.
+      type: string
+    linked_networks:
+      title: Linked Networks
+      description: The networks that resolve names in this zone.
+      type: array
+      items:
+        type: string

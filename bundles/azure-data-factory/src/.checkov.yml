@@ -1,0 +1,9 @@
+# Each skip carries the reason that the platform team accepted.
+skip-check:
+  # A customer managed key needs a key from the azure-key-vault bundle. This
+  # bundle takes no key connection yet.
+  - CKV2_AZURE_15
+  # This bundle edits its pipelines in the studio. Git integration needs a
+  # repository and a branch per environment, so the platform team adds it after
+  # the first factory runs.
+  - CKV_AZURE_103
