@@ -17,7 +17,7 @@ Turn off public ingress to accept traffic from inside the network only.
 | Database | No | The host, the port, the name, the user, and the password. |
 | Storage | No | The account, the container, and the endpoint. |
 
-## Access to storage
+## Access
 
 The application holds a system assigned identity. The bundle assigns the Azure
 role that matches the selected policy. No access key exists.

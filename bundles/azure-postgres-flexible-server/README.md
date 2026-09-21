@@ -11,7 +11,7 @@ network can reach it.
 The bundle fails with a clear message when the network holds no delegated
 subnet.
 
-## Fields that you cannot change
+## Immutable fields
 
 - **PostgreSQL version.** A major version upgrade needs a maintenance window.
 - **Database name** and **administrator username**.

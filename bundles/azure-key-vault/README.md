@@ -19,7 +19,7 @@ audit than two. Give an identity the role that matches its need:
 The vault denies every source outside the connected network. Azure services
 such as Disk Encryption reach it through the bypass.
 
-## Fields that you cannot change
+## Immutable fields
 
 - **Purge protection.** Azure cannot turn it off. A vault with the setting on
   stays until the retention period ends, and its name stays reserved.

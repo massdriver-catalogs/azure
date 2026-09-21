@@ -15,7 +15,7 @@ subnets need the `Microsoft.AzureCosmosDB` service endpoint, and the
 | Serverless | A small load, or an uneven load. Azure charges per request. |
 | Provisioned | A steady load above about 1000 RU/s. Azure charges a reserved rate. |
 
-## Fields that you cannot change
+## Immutable fields
 
 The database name, the API, and the capacity mode. Azure sets all three at
 creation. A change needs a new account and a data migration.

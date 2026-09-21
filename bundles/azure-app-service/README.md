@@ -24,7 +24,7 @@ rule.
 | Database | No |
 | Storage | No |
 
-## Access to storage
+## Access
 
 The application holds a system assigned identity, and the bundle assigns the
 Azure role that matches the selected policy.

@@ -2,12 +2,12 @@
 
 This bundle creates a storage account and one blob container.
 
-## What it produces
+## Outputs
 
 An `object-storage` resource. It carries the endpoint, the container name, and
 three access policies.
 
-## How an application gets access
+## Access
 
 The bundle turns off the shared access key, so no secret leaves it. An
 application selects a policy, then assigns the matching Azure role to its own
@@ -25,6 +25,6 @@ The account denies all traffic, except traffic from the subnets of the
 connected network. The subnets need the `Microsoft.Storage` service endpoint.
 The `azure-virtual-network` bundle sets that endpoint on every subnet.
 
-## Fields that you cannot change
+## Immutable fields
 
 - **Container name.** Azure cannot rename a container.

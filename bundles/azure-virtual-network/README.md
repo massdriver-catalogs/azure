@@ -5,11 +5,11 @@ This bundle creates a resource group, a virtual network, and the subnets inside 
 Each PaaS service gets its own subnet. The `delegation` field gives a subnet to
 one Azure service. Azure then lets that service inject its own network interfaces.
 
-## What it produces
+## Outputs
 
 A `virtual-network` resource. Any bundle that needs a network consumes it.
 
-## Fields that you cannot change
+## Immutable fields
 
 - **Region.** Azure cannot move a network.
 - **Network CIDR.** Azure destroys and recreates a network when this range changes.

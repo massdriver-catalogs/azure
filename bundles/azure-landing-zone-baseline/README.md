@@ -3,7 +3,7 @@
 This bundle sets the governance floor of a landing zone. Deploy it once per
 environment, before any workload.
 
-## What it creates
+## Resources created
 
 - A Log Analytics workspace.
 - A diagnostic setting that sends the activity log of the subscription to the
@@ -12,11 +12,11 @@ environment, before any workload.
 - The Defender for Cloud plan of the subscription.
 - A security contact, when you give an address.
 
-## What it produces
+## Outputs
 
 A `log-workspace` resource. Any bundle that sends diagnostic data consumes it.
 
-## Warning: the Standard plan costs money
+## Cost
 
 The Defender Standard plan charges per resource per month. The Free plan gives
 recommendations and a secure score at no charge. Development environments

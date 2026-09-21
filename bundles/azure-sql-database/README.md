@@ -23,6 +23,6 @@ level, because Azure rejects it.
 
 The bundle turns on the extended audit policy and keeps the record for 90 days.
 
-## Fields that you cannot change
+## Immutable fields
 
 The database name and the administrator username.

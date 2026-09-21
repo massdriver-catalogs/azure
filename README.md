@@ -1,128 +1,107 @@
 # Azure Catalog
 
-A production-shaped Massdriver catalog for Azure. It gives a platform team a
-working set of resource types and bundles on day one, so you start from real
-infrastructure instead of a blank canvas.
+A Massdriver catalog of Azure bundles and resource types. Publish it to your
+organization to get a working set of infrastructure components, then edit them
+to match your standards.
 
-Clone it, publish it to your organization, then change what doesn't fit. Every
-bundle here is meant to be edited — the value is in the shape, not in the
-specific numbers.
+Contents: 14 bundles, 13 resource types, and the Azure service principal
+credential type.
 
----
+## Concepts
 
-## How a Massdriver catalog works
-
-If you're new to the platform, five ideas carry most of the weight.
-
-| Concept | What it is |
+| Term | Meaning |
 |---|---|
-| **Resource type** | A JSON Schema contract that describes what one component hands to another — a database's connection details, a network's subnets. Type safety for infrastructure: you can't wire a Postgres output into a bucket input. |
-| **Bundle** | A versioned package of IaC (OpenTofu, Terraform, Helm) plus the schema of its inputs, the resources it produces, and its operational docs. Bundles are what your developers pick from. |
-| **Resource** | The live output of a deployed bundle. A Postgres bundle emits a `postgres-database` resource holding the real hostname and password. |
-| **Project & environment** | A project groups related infrastructure; each environment (`dev`, `staging`, `prod`) is a canvas inside it. Add a component once to the project, and every environment gets an instance. |
-| **Instance** | One configured, deployed copy of a bundle in one environment. |
+| Resource type | A JSON Schema contract describing what one component passes to another, such as a database's connection details or a network's subnets. Massdriver validates connections against it. |
+| Bundle | A versioned package of IaC (OpenTofu, Terraform, or Helm) with the schema of its inputs, the resources it produces, and its documentation. |
+| Resource | The output of a deployed bundle. A Postgres bundle emits a `postgres-database` resource with the hostname, port, user, and password. |
+| Project | A group of related infrastructure. Components are added at the project level. |
+| Environment | A deployment context inside a project, such as `dev` or `prod`. Each environment gets one instance of every component in the project. |
+| Instance | One configured, deployed copy of a bundle in one environment. |
 
-The point of a catalog is that the platform team writes the guardrails once —
-in schemas, defaults and policies — and developers self-serve inside them.
+## Bundles
 
----
-
-## What's in here
-
-### Bundles
-
-**Landing zone** — owned by the platform team.
+Landing zone:
 
 | Bundle | Creates |
 |---|---|
-| `azure-subscription-factory` | A subscription under a billing scope, placed in a management group, with a budget. Emits the landing-zone class that governs which bundles a project may use. |
-| `azure-landing-zone-baseline` | Log Analytics, subscription activity logs, the Defender plan, a security contact. |
-| `azure-ipam-allocation` | Records a CIDR and registers it with your external IPAM (Infoblox, Strata, whatever you run). |
-| `azure-virtual-network` | Resource group, VNet, delegated subnets, an NSG per subnet, service endpoints. |
-| `azure-private-dns-zone` | A private link zone, linked to the network. |
-| `azure-key-vault` | A vault using Azure RBAC rather than access policies. |
+| `azure-subscription-factory` | A subscription under a billing scope, placed in a management group, with a monthly budget. Emits the class that governs which bundles a project can use. |
+| `azure-landing-zone-baseline` | A Log Analytics workspace, the subscription activity log, the Defender plan, and a security contact. |
+| `azure-ipam-allocation` | A record of a CIDR range, registered with an external IPAM system over HTTP. |
+| `azure-virtual-network` | A resource group, a VNet, delegated subnets, a network security group per subnet, and service endpoints. |
+| `azure-private-dns-zone` | A private link DNS zone, linked to the network. |
+| `azure-key-vault` | A key vault that uses Azure RBAC. |
 
-**Data**
-
-| Bundle | Creates |
-|---|---|
-| `azure-postgres-flexible-server` | A flexible server injected into a delegated subnet, with no public endpoint, plus its private DNS zone. |
-| `azure-sql-database` | A SQL server and database reachable only from the connected network. |
-| `azure-cosmos-account` | A Cosmos DB account, serverless or provisioned, behind a network filter. |
-| `azure-storage-account` | A storage account with shared-key auth disabled — consumers use Azure roles. |
-| `azure-data-factory` | A factory with a managed identity and a managed VNet. |
-
-**Compute**
+Data:
 
 | Bundle | Creates |
 |---|---|
-| `azure-container-app` | A Container Apps environment in a delegated subnet, with a managed identity and its database password held as a secret. |
-| `azure-app-service` | A Linux web app on an App Service plan, VNet-integrated, with all egress routed through the network. |
-| `azure-kubernetes-service` | An AKS cluster with autoscaling, Azure CNI, the policy add-on and Monitor integration. |
+| `azure-postgres-flexible-server` | A flexible server in a delegated subnet with no public endpoint, and its private DNS zone. |
+| `azure-sql-database` | A SQL server and one database, reachable from the connected network only. |
+| `azure-cosmos-account` | A Cosmos DB account and database, serverless or provisioned, behind a network filter. |
+| `azure-storage-account` | A storage account and blob container with shared key access disabled. |
+| `azure-data-factory` | A factory with a system assigned identity and a managed virtual network. |
 
-### Resource types
+Compute:
+
+| Bundle | Creates |
+|---|---|
+| `azure-container-app` | A Container Apps environment in a delegated subnet, and an application with a system assigned identity. |
+| `azure-app-service` | A Linux web app on an App Service plan, joined to a delegated subnet, with all egress routed through the network. |
+| `azure-kubernetes-service` | An AKS cluster with autoscaling, Azure CNI, the policy add-on, and Monitor integration. |
+
+## Resource types
 
 `cloud-account`, `data-pipeline`, `document-database`, `key-vault`,
 `kubernetes-cluster`, `log-workspace`, `mssql-database`, `network-allocation`,
 `object-storage`, `postgres-database`, `private-dns-zone`, `virtual-network`,
 `workload`.
 
-These are deliberately **cloud-neutral**. A `postgres-database` contract fits
-Azure Flexible Server and Cloud SQL alike, so the GCP catalog can emit the same
-type and your app bundles don't care which cloud they land on. Only
-`cloud-account` carries cloud-specific fields.
+All of them except `cloud-account` are cloud-neutral. A catalog for another
+cloud can emit the same contracts, so application bundles do not change when
+the cloud does.
 
----
+## Best practices
 
-## The patterns worth copying
+Fields that force Azure to destroy and recreate a resource carry
+`$md.immutable`. That covers the network CIDR, the region, the PostgreSQL
+version, the Cosmos DB API and capacity mode, the Key Vault purge protection,
+and the database and container names. The form rejects the change rather than
+showing it in a plan.
 
-This is the part to read before you write your own bundles.
+Azure delegates a subnet to one service. The network bundle exposes the
+delegation as a field on each subnet, and each consumer selects its subnet by
+delegation. A Container Apps subnet needs a `/23` or larger range.
 
-**Immutability over apology.** Any field where a change forces Azure to destroy
-and recreate is marked `$md.immutable`: network CIDR, region, database version,
-Cosmos consistency mode, Key Vault purge protection. The form blocks the change
-instead of surfacing it in a plan.
+The storage bundle sets `shared_access_key_enabled = false`, and the key vault
+uses `rbac_authorization_enabled = true`. Consumers get an Azure role for their
+managed identity. Bundles that produce credentials mark them `$md.sensitive`.
 
-**One PaaS service per subnet.** Azure delegates a subnet to exactly one
-service. The network bundle makes the delegation a first-class field, and every
-consumer picks its subnet by delegation rather than by position.
+A producer publishes its access levels in a `policies` array. A consumer reads
+that array through `$md.enum` and shows the developer a list. The application
+bundles then assign the matching Azure role.
 
-**Identity, not keys.** Storage disables shared-key auth entirely; consumers
-receive an Azure role and use a managed identity. Key Vault uses RBAC, not
-access policies. No connection string leaves a bundle that doesn't need one.
+Help text on a parameter states the cost and the operational effect of each
+choice, such as the price difference between access tiers or the failover time
+of a high availability server.
 
-**Policies chosen, not written.** A producer publishes its access levels
-(`Read`, `Read and write`, `Full control`); a consumer picks one from a
-dropdown via `$md.enum`. The developer never sees an IAM document.
+Nine bundles carry `src/alarms.tf`, for 28 alarms bound to Azure Monitor
+metrics. Each alarm needs its own `cloud_resource_id`, so the identifier is the
+ARM ID followed by a pipe and the alarm name.
 
-**Costs and consequences in the UI.** Help text states what a choice costs and
-what it breaks: *"Cool cuts storage price roughly in half and raises the price
-of every read."* *"Doubles the cost of the server. Failover takes about 60
-seconds."*
+Massdriver runs Checkov on every deployment. Findings are either fixed in the
+IaC or listed in `src/.checkov.yml` with the reason written next to each entry.
+The catalog currently scans clean.
 
-**Alarms ship with the bundle.** 28 alarms across 9 bundles, wired to Azure
-Monitor metrics. Nobody has to remember to add monitoring afterwards.
+Every bundle has an `operator.md` with `templating: mustache` front matter. The
+runbooks interpolate `{{resources.<name>.<field>}}`, `{{dependencies.<name>}}`,
+and `{{params.<name>}}` into runnable commands, and wrap resource-sourced
+sections in `{{#resources.<name>}}` guards so they render before the first
+deployment.
 
-**Compliance decisions are written down.** Every Checkov finding is either
-fixed in code or skipped in `src/.checkov.yml` with the reason beside it. The
-catalog scans clean, and nothing is hidden — the skip files are the audit
-trail.
+## Publishing
 
-**Runbooks that interpolate.** Each bundle carries an `operator.md` rendered
-with live values, organised as symptom → diagnosis → fix with runnable
-commands.
-
----
-
-## Quick start
-
-### 1. Prerequisites
-
-- [Mass CLI](https://docs.massdriver.cloud/cli) ≥ `2.0.0`
-- OpenTofu ≥ 1.8
-- An Azure service principal
-
-### 2. Authenticate
+Requirements: [Mass CLI](https://docs.massdriver.cloud/cli) 2.0.0 or later,
+OpenTofu 1.8 or later, and an Azure service principal.
 
 ```bash
 export MASSDRIVER_ORG_ID=your-org
@@ -130,101 +109,66 @@ export MASSDRIVER_API_KEY=your-key
 mass whoami
 ```
 
-### 3. Publish
-
 ```bash
 make publish-platforms       # the azure-service-principal credential type
 make publish-resource-types  # the contracts
-make publish-bundles         # build, validate, publish
+make publish-bundles         # build, validate, and publish
 ```
 
-`make publish-all` does all three. Every target is idempotent.
+`make publish-all` runs all three. Each target is idempotent.
 
-> **Note:** publishing a bundle updates every instance pinned to a matching
-> release channel. Pin production instances to an exact version if you don't
-> want that.
+Publishing a bundle updates every instance pinned to a matching release
+channel. Pin production instances to an exact version to avoid that.
 
-### 4. Add the credential
-
-In the Massdriver UI, create an **Azure Service Principal** resource with your
-client ID, tenant ID, client secret and subscription ID, then set it as an
-environment default. Every bundle reads its credential from there.
-
-### 5. Build a project
-
-Create a project, add components, wire them together, deploy. A sensible first
-shape:
-
-```
-platform-landing-zones     network, baseline, DNS zones, key vault
-  └── consumed by ──►  application-platform    app + database + storage
-                       data-platform           cluster, pipelines, warehouse
-```
-
-Application projects reach the network by remote reference or environment
-default, so the platform team owns it and app teams merely consume it.
-
----
+Then create an Azure Service Principal resource in the UI with the client ID,
+tenant ID, client secret, and subscription ID, and set it as an environment
+default. Each bundle reads its credential from there.
 
 ## Azure permissions
 
-The service principal needs:
-
-| Scope | Role | Needed for |
+| Scope | Role | Required by |
 |---|---|---|
-| Subscription | `Contributor` | Almost everything |
-| Subscription | `Security Admin` | The Defender plan in the baseline bundle |
-| Subscription | `User Access Administrator` | Role assignments (storage access for app identities) |
-| Billing account | `Owner` | The subscription factory only |
-| Management group | `Management Group Contributor` | The subscription factory only |
+| Subscription | `Contributor` | Every bundle |
+| Subscription | `User Access Administrator` | Role assignments, used by the application and Data Factory bundles |
+| Subscription | `Security Admin` | `azure-landing-zone-baseline` |
+| Billing account | `Owner` | `azure-subscription-factory` |
+| Management group | `Management Group Contributor` | `azure-subscription-factory` |
 
-Most of the catalog runs with `Contributor` plus `User Access Administrator`.
-The subscription factory is the outlier and usually belongs to a separate,
-more privileged credential.
-
----
+`azure-subscription-factory` usually runs under a separate credential with a
+wider scope than the one the other bundles use.
 
 ## Layout
 
 ```
-bundles/           one directory per bundle
+bundles/
   <name>/
-    massdriver.yaml    params, connections, resources, UI
+    massdriver.yaml    params, dependencies, resources, UI schema
     src/               OpenTofu: main.tf, resources.tf, alarms.tf, .checkov.yml
-    README.md          what it builds and why
-    operator.md        runbook, rendered with live values
+    README.md
+    operator.md        runbook
     CHANGELOG.md
     icon.svg
-resource-types/    the contracts between bundles
-platforms/         cloud credential types (azure)
-templates/         scaffolds for `mass bundle new`
-preview.yaml       preview-environment config for PR-based workflows
-Makefile           build, validate, publish
+resource-types/        the contracts between bundles
+platforms/azure/       the service principal credential type
+templates/             scaffolds for `mass bundle new`
+preview.yaml           preview environment configuration
+Makefile               build, validate, publish
 ```
 
----
+Do not commit `_massdriver_variables.tf`, `schema-*.json`, `.terraform/`, or
+state files. `make clean` removes them, and `.gitignore` covers them.
 
 ## Known gaps
 
-Honest list, in rough priority order:
+Customer managed keys are not wired up. `azure-key-vault` exists, but the
+storage, Cosmos DB, Data Factory, and AKS bundles do not accept a key
+connection. Five Checkov skips refer to this.
 
-- **Customer-managed keys aren't wired up.** The Key Vault bundle exists, but
-  storage, Cosmos, Data Factory and AKS don't yet accept a key connection.
-  Five Checkov skips point at this.
-- **Private endpoints aren't wired up.** The DNS zone bundle exists; no bundle
-  creates an endpoint against it yet. Three skips point at this.
-- **Missing bundles** that most Azure estates eventually want: Functions,
-  Container Registry, Redis, Service Bus, Application Gateway or Front Door,
-  MySQL.
-- **Versions are all `0.0.0`.** Adopt semver before anyone depends on this.
+Private endpoints are not wired up. `azure-private-dns-zone` exists, but no
+bundle creates an endpoint against it. Three Checkov skips refer to this.
 
----
+There are no bundles for Functions, Container Registry, Redis, Service Bus,
+Application Gateway, Front Door, or MySQL.
 
-## Conventions
-
-- **Resource types are cloud-neutral; bundles carry the cloud name.** Keeps app
-  bundles portable across clouds.
-- **Bundle names are `azure-<service>`.** Bundle and resource-type repositories
-  share one namespace, so names can't collide.
-- **Never commit** `_massdriver_variables.tf`, `schema-*.json`, `.terraform/`
-  or state. `make clean` removes them.
+Every bundle and resource type is at version `0.0.0`. Move to semantic
+versioning before anything depends on this catalog.

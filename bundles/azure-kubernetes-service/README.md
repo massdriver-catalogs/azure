@@ -10,7 +10,7 @@ gives every pod an address from that subnet, so the subnet needs free space.
 
 Each node takes about 30 addresses. A `/24` subnet holds about 8 nodes.
 
-## What it produces
+## Outputs
 
 A `kubernetes-cluster` resource. It carries the API server address and the
 client certificate. Massdriver masks those fields, and it records every
@@ -24,6 +24,6 @@ download.
 | Standard tier control plane | About 73 dollars per month. |
 | Nodes | The price of each virtual machine, per hour. |
 
-## Fields that you cannot change
+## Immutable fields
 
 The private API server. Azure sets it at creation.
