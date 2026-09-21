@@ -177,17 +177,3 @@ Makefile               build, validate, publish
 
 Do not commit `_massdriver_variables.tf`, `schema-*.json`, `.terraform/`, or
 state files. `make clean` removes them, and `.gitignore` covers them.
-
-## Known gaps
-
-A customer managed key on a Cosmos DB account needs the Azure Cosmos DB
-first-party principal to hold wrap and unwrap on the vault. Finding that
-principal needs an Entra ID lookup, which the provisioner cannot run, so the
-Cosmos bundle takes no key connection. Grant the principal access by hand, then
-set the key on the account.
-
-The following bundles have been deployed against a live subscription:
-`azure-virtual-network`, `azure-landing-zone-baseline`, `azure-storage-account`,
-`azure-postgres-flexible-server`, and `azure-container-app`. The others pass
-`tofu validate`, `mass bundle lint`, and Checkov, and nobody has applied them
-yet.
