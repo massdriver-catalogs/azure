@@ -3,8 +3,8 @@ skip-check:
   # A private API server is a parameter of this bundle. A production instance
   # selects it, and a development instance does not.
   - CKV_AZURE_115
-  # A disk encryption set needs a key from the azure-key-vault bundle, and a
-  # disk encryption set resource. This bundle creates neither yet.
+  # The bundle creates the disk encryption set when a key vault is connected.
+  # Checkov reads the code without the connection, so it cannot see it.
   - CKV_AZURE_117
   # The Helm provisioner reaches the cluster with the local account. Entra ID
   # authentication needs a group object identifier per environment.
@@ -25,3 +25,9 @@ skip-check:
   # An address range on the API server blocks the Massdriver provisioner, which
   # holds no fixed address. The private cluster parameter covers this risk.
   - CKV_AZURE_6
+  # Azure sets the expiry when it rotates the key, and the key carries a
+  # rotation policy. A fixed date in the code drifts on every deployment.
+  - CKV_AZURE_40
+  # A hardware module key needs a premium vault. The key type follows the level
+  # that the connected vault publishes.
+  - CKV_AZURE_112

@@ -1,9 +1,16 @@
 # Each skip carries the reason that the platform team accepted.
 skip-check:
-  # A customer managed key needs a key from the azure-key-vault bundle. This
-  # bundle takes no key connection yet.
+  # The bundle creates the key and the encryption identity when a key vault is
+  # connected. Checkov reads the code without the connection, so it cannot see
+  # them.
   - CKV2_AZURE_15
   # This bundle edits its pipelines in the studio. Git integration needs a
   # repository and a branch per environment, so the platform team adds it after
   # the first factory runs.
   - CKV_AZURE_103
+  # Azure sets the expiry when it rotates the key, and the key carries a
+  # rotation policy. A fixed date in the code drifts on every deployment.
+  - CKV_AZURE_40
+  # A hardware module key needs a premium vault. The key type follows the level
+  # that the connected vault publishes.
+  - CKV_AZURE_112

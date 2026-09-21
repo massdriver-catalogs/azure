@@ -85,6 +85,12 @@ dependencies:
   logs:
     resource_type: log-workspace@0.0.0
     required: false
+  key_vault:
+    resource_type: key-vault@0.0.0
+    required: false
+  private_dns_zone:
+    resource_type: private-dns-zone@0.0.0
+    required: false
 
 resources:
   bucket:

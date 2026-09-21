@@ -102,6 +102,9 @@ dependencies:
   network:
     resource_type: virtual-network@0.0.0
     required: true
+  private_dns_zone:
+    resource_type: private-dns-zone@0.0.0
+    required: false
 
 resources:
   database:

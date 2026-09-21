@@ -8,6 +8,12 @@ The server accepts traffic from the subnets of the connected network only. The
 bundle creates one network rule per subnet, and it opens no firewall rule to the
 internet. The subnets need the `Microsoft.Sql` service endpoint.
 
+## Private endpoint
+
+Connect a private DNS zone named `privatelink.database.windows.net` to give the
+server an address inside the network. The endpoint lands in the first subnet
+without a delegation.
+
 ## Service levels
 
 | Level | Notes |

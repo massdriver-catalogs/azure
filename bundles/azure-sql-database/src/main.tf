@@ -2,6 +2,11 @@ locals {
   name_prefix = var.md_metadata.name_prefix
   server_name = substr(replace(lower(local.name_prefix), "/[^a-z0-9-]/", ""), 0, 63)
   subnets     = { for subnet in var.network.subnets : subnet.name => subnet.id }
+  has_zone    = try(var.private_dns_zone.id, null) != null
+
+  # A private endpoint needs a subnet that no service owns.
+  open_subnets    = [for subnet in var.network.subnets : subnet if try(subnet.delegation, "none") == "none"]
+  endpoint_subnet = try(local.open_subnets[0].id, null)
 }
 
 resource "random_password" "admin" {
@@ -65,4 +70,35 @@ resource "azurerm_mssql_server_extended_auditing_policy" "main" {
   server_id              = azurerm_mssql_server.main.id
   log_monitoring_enabled = true
   retention_in_days      = 90
+}
+
+# A private endpoint gives the server an address inside the network. The
+# connected zone answers the public name with that address.
+resource "azurerm_private_endpoint" "sql" {
+  count = local.has_zone ? 1 : 0
+
+  lifecycle {
+    precondition {
+      condition     = local.endpoint_subnet != null
+      error_message = "A private endpoint needs a subnet without a delegation. Add one to the network, then deploy again."
+    }
+  }
+
+  name                = local.name_prefix
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  subnet_id           = local.endpoint_subnet
+  tags                = var.md_metadata.default_tags
+
+  private_service_connection {
+    name                           = local.name_prefix
+    private_connection_resource_id = azurerm_mssql_server.main.id
+    subresource_names              = ["sqlServer"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "default"
+    private_dns_zone_ids = [var.private_dns_zone.id]
+  }
 }

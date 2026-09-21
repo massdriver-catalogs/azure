@@ -16,6 +16,15 @@ A `kubernetes-cluster` resource. It carries the API server address and the
 client certificate. Massdriver masks those fields, and it records every
 download.
 
+## Disk encryption
+
+Connect a key vault to encrypt every disk of the cluster with a customer
+managed key. The bundle creates the key, a disk encryption set, and the role
+assignment that lets the set read the key.
+
+Azure sets the disk encryption set at creation. A cluster that already exists
+cannot take one later.
+
 ## Cost
 
 | Item | Cost |

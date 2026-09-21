@@ -92,6 +92,9 @@ dependencies:
   network:
     resource_type: virtual-network@0.0.0
     required: true
+  key_vault:
+    resource_type: key-vault@0.0.0
+    required: false
 
 resources:
   cluster:

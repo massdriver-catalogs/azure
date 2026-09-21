@@ -7,6 +7,7 @@ resource "massdriver_resource" "vault" {
     name             = azurerm_key_vault.main.name
     uri              = azurerm_key_vault.main.vault_uri
     region           = azurerm_resource_group.main.location
+    sku              = var.sku
     tenant_id        = var.azure_service_principal.tenant_id
     purge_protection = var.purge_protection
   })

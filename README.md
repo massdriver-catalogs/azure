@@ -7,6 +7,14 @@ to match your standards.
 Contents: 14 bundles, 13 resource types, and the Azure service principal
 credential type.
 
+This is a hard fork of the
+[Massdriver catalog template](https://github.com/massdriver-cloud/massdriver-catalog),
+which is the cloud-neutral starting point for any catalog. This repository
+replaces the template's example bundles with Azure ones so a team can start on
+Azure without writing them first. The template repository still holds the
+credential types for the other clouds, the bundle scaffolds, and the
+documentation on the catalog format.
+
 ## Concepts
 
 | Term | Meaning |
@@ -36,10 +44,10 @@ Data:
 | Bundle | Creates |
 |---|---|
 | `azure-postgres-flexible-server` | A flexible server in a delegated subnet with no public endpoint, and its private DNS zone. |
-| `azure-sql-database` | A SQL server and one database, reachable from the connected network only. |
+| `azure-sql-database` | A SQL server and one database, reachable from the connected network only. Takes an optional private DNS zone. |
 | `azure-cosmos-account` | A Cosmos DB account and database, serverless or provisioned, behind a network filter. |
-| `azure-storage-account` | A storage account and blob container with shared key access disabled. |
-| `azure-data-factory` | A factory with a system assigned identity and a managed virtual network. |
+| `azure-storage-account` | A storage account and blob container with shared key access disabled. Takes an optional key vault and private DNS zone. |
+| `azure-data-factory` | A factory with a system assigned identity and a managed virtual network. Takes an optional key vault. |
 
 Compute:
 
@@ -47,7 +55,7 @@ Compute:
 |---|---|
 | `azure-container-app` | A Container Apps environment in a delegated subnet, and an application with a system assigned identity. |
 | `azure-app-service` | A Linux web app on an App Service plan, joined to a delegated subnet, with all egress routed through the network. |
-| `azure-kubernetes-service` | An AKS cluster with autoscaling, Azure CNI, the policy add-on, and Monitor integration. |
+| `azure-kubernetes-service` | An AKS cluster with autoscaling, Azure CNI, the policy add-on, and Monitor integration. Takes an optional key vault for disk encryption. |
 
 ## Resource types
 
@@ -87,6 +95,18 @@ of a high availability server.
 Nine bundles carry `src/alarms.tf`, for 28 alarms bound to Azure Monitor
 metrics. Each alarm needs its own `cloud_resource_id`, so the identifier is the
 ARM ID followed by a pipe and the alarm name.
+
+Connect `azure-key-vault` to the storage, Data Factory, or Kubernetes bundle to
+encrypt with a customer managed key. The consumer creates its own key in the
+vault, creates the identity that reads it, and assigns the
+`Key Vault Crypto Service Encryption User` role. The key type follows the level
+that the vault publishes, so a premium vault produces a hardware module key.
+The service principal needs `Key Vault Crypto Officer` on the vault to create
+the key.
+
+Connect `azure-private-dns-zone` to the storage or SQL bundle to add a private
+endpoint. The endpoint lands in the first subnet without a delegation, and the
+zone answers the public name with the private address.
 
 Massdriver runs Checkov on every deployment. Findings are either fixed in the
 IaC or listed in `src/.checkov.yml` with the reason written next to each entry.
@@ -160,15 +180,14 @@ state files. `make clean` removes them, and `.gitignore` covers them.
 
 ## Known gaps
 
-Customer managed keys are not wired up. `azure-key-vault` exists, but the
-storage, Cosmos DB, Data Factory, and AKS bundles do not accept a key
-connection. Five Checkov skips refer to this.
+A customer managed key on a Cosmos DB account needs the Azure Cosmos DB
+first-party principal to hold wrap and unwrap on the vault. Finding that
+principal needs an Entra ID lookup, which the provisioner cannot run, so the
+Cosmos bundle takes no key connection. Grant the principal access by hand, then
+set the key on the account.
 
-Private endpoints are not wired up. `azure-private-dns-zone` exists, but no
-bundle creates an endpoint against it. Three Checkov skips refer to this.
-
-There are no bundles for Functions, Container Registry, Redis, Service Bus,
-Application Gateway, Front Door, or MySQL.
-
-Every bundle and resource type is at version `0.0.0`. Move to semantic
-versioning before anything depends on this catalog.
+The following bundles have been deployed against a live subscription:
+`azure-virtual-network`, `azure-landing-zone-baseline`, `azure-storage-account`,
+`azure-postgres-flexible-server`, and `azure-container-app`. The others pass
+`tofu validate`, `mass bundle lint`, and Checkov, and nobody has applied them
+yet.

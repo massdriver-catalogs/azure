@@ -6,9 +6,9 @@ skip-check:
   # Entra ID authentication needs the object identifier of an administrator
   # group, and that value differs per environment.
   - CKV2_AZURE_27
-  # A private endpoint needs the azure-private-dns-zone bundle and an endpoint
-  # resource. This bundle creates neither yet, and the network rules already
-  # refuse every source outside the network.
+  # The bundle creates the endpoint when a private DNS zone is connected.
+  # Checkov reads the code without the connection, so it cannot see it. The
+  # network rules already refuse every source outside the network.
   - CKV2_AZURE_45
   # Azure ignores a virtual network rule when public network access is off, so
   # the two settings cannot both apply. The rules deny every other source.

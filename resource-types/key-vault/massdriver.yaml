@@ -45,6 +45,15 @@ schema:
       title: Tenant ID
       description: The directory that holds the identities with access to the vault.
       type: string
+    sku:
+      title: Service Level
+      description: The level of the vault. A premium vault can hold a key in a hardware module.
+      type: string
+      oneOf:
+        - const: standard
+          title: Standard
+        - const: premium
+          title: Premium
     purge_protection:
       title: Purge Protection
       description: True when nobody can remove a deleted key before the retention period ends. A customer managed key needs this.

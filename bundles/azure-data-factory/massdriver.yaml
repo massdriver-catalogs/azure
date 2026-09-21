@@ -61,6 +61,9 @@ dependencies:
   bucket:
     resource_type: object-storage@0.0.0
     required: false
+  key_vault:
+    resource_type: key-vault@0.0.0
+    required: false
 
 resources:
   pipeline:

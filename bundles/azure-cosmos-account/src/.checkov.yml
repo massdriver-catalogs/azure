@@ -1,7 +1,9 @@
 # Each skip carries the reason that the platform team accepted.
 skip-check:
-  # A customer managed key needs a key from the azure-key-vault bundle. This
-  # bundle takes no key connection yet, so Azure encrypts with its own key.
+  # A customer managed key on a Cosmos DB account needs the Azure Cosmos DB
+  # first-party principal to hold wrap and unwrap on the vault. That principal
+  # is found through an Entra ID lookup, and the provisioner cannot run one.
+  # Grant it by hand, then set the key on the account.
   - CKV_AZURE_100
   # The account uses the network filter instead. Azure ignores a virtual
   # network rule when public network access is off, so the two settings

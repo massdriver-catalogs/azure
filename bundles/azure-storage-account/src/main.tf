@@ -7,6 +7,12 @@ locals {
 
   subnet_ids = [for subnet in var.network.subnets : subnet.id]
   has_logs   = try(var.logs.id, null) != null
+  has_key    = try(var.key_vault.id, null) != null
+  has_zone   = try(var.private_dns_zone.id, null) != null
+
+  # A private endpoint needs a subnet that no service owns.
+  open_subnets    = [for subnet in var.network.subnets : subnet if try(subnet.delegation, "none") == "none"]
+  endpoint_subnet = try(local.open_subnets[0].id, null)
 }
 
 resource "azurerm_resource_group" "main" {
@@ -36,8 +42,21 @@ resource "azurerm_storage_account" "main" {
   local_user_enabled                = false
   sftp_enabled                      = false
 
+  # A customer managed key needs a user assigned identity. Azure reads the key
+  # with that identity, and a system assigned identity cannot do it, because
+  # the account needs the identity before it exists.
   identity {
-    type = "SystemAssigned"
+    type         = local.has_key ? "SystemAssigned, UserAssigned" : "SystemAssigned"
+    identity_ids = local.has_key ? [azurerm_user_assigned_identity.encryption[0].id] : null
+  }
+
+  dynamic "customer_managed_key" {
+    for_each = local.has_key ? [1] : []
+
+    content {
+      key_vault_key_id          = azurerm_key_vault_key.encryption[0].id
+      user_assigned_identity_id = azurerm_user_assigned_identity.encryption[0].id
+    }
   }
 
   blob_properties {
@@ -90,5 +109,82 @@ resource "azurerm_monitor_diagnostic_setting" "blob" {
 
   enabled_metric {
     category = "Transaction"
+  }
+}
+
+# The key stays in the connected vault, and the account reads it with its own
+# identity. The vault needs purge protection, and the service principal needs
+# the Key Vault Crypto Officer role on it.
+resource "azurerm_user_assigned_identity" "encryption" {
+  count = local.has_key ? 1 : 0
+
+  name                = "${local.name_prefix}-encryption"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  tags                = var.md_metadata.default_tags
+}
+
+resource "azurerm_role_assignment" "encryption" {
+  count = local.has_key ? 1 : 0
+
+  scope                = var.key_vault.id
+  role_definition_name = "Key Vault Crypto Service Encryption User"
+  principal_id         = azurerm_user_assigned_identity.encryption[0].principal_id
+}
+
+resource "azurerm_key_vault_key" "encryption" {
+  count = local.has_key ? 1 : 0
+
+  name         = local.name_prefix
+  key_vault_id = var.key_vault.id
+  key_size     = 2048
+
+  # A hardware module key needs a premium vault. The vault publishes its level.
+  key_type = try(var.key_vault.sku, "standard") == "premium" ? "RSA-HSM" : "RSA"
+
+  key_opts = ["decrypt", "encrypt", "sign", "unwrapKey", "verify", "wrapKey"]
+
+  # Azure rotates the key and sets the next expiry. A fixed date in the code
+  # would drift on every deployment.
+  rotation_policy {
+    expire_after         = "P1Y"
+    notify_before_expiry = "P30D"
+
+    automatic {
+      time_before_expiry = "P30D"
+    }
+  }
+
+  depends_on = [azurerm_role_assignment.encryption]
+}
+
+# A private endpoint gives the account an address inside the network. The
+# connected zone answers the public name with that address.
+resource "azurerm_private_endpoint" "blob" {
+  count = local.has_zone ? 1 : 0
+
+  lifecycle {
+    precondition {
+      condition     = local.endpoint_subnet != null
+      error_message = "A private endpoint needs a subnet without a delegation. Add one to the network, then deploy again."
+    }
+  }
+
+  name                = "${local.name_prefix}-blob"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  subnet_id           = local.endpoint_subnet
+  tags                = var.md_metadata.default_tags
+
+  private_service_connection {
+    name                           = "${local.name_prefix}-blob"
+    private_connection_resource_id = azurerm_storage_account.main.id
+    subresource_names              = ["blob"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = "default"
+    private_dns_zone_ids = [var.private_dns_zone.id]
   }
 }
