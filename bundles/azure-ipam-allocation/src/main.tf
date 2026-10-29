@@ -1,6 +1,9 @@
 locals {
   name_prefix = var.md_metadata.name_prefix
 
+  # md-instance is <project>-<environment>-<component>.
+  instance_path = split("-", var.md_metadata.default_tags["md-instance"])
+
   # The bundle registers the range only when the operator turns it on and gives
   # an endpoint. Until then it records the range inside Massdriver alone.
   register = var.register_with_ipam && var.ipam_endpoint != ""
@@ -31,8 +34,8 @@ data "http" "register" {
     region      = var.region
     name        = local.name_prefix
     owner       = var.md_metadata.target.contact_email
-    environment = var.md_metadata.default_tags["md-target"]
-    project     = var.md_metadata.default_tags["md-project"]
+    environment = local.instance_path[1]
+    project     = local.instance_path[0]
   })
 
   lifecycle {
